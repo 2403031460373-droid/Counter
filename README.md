@@ -1,277 +1,229 @@
-# Bulletin Board DApp
+# Midnight Counter ZK DApp
 
-This project is built on the [Midnight Network](https://midnight.network/).
+A production-ready full-stack Zero-Knowledge Counter DApp built on the Midnight Blockchain platform using Compact smart contracts, TypeScript API layer, CLI, and React Web UI with Lace wallet integration.
 
-[![Generic badge](https://img.shields.io/badge/Compact%20Compiler-0.30.0-1abc9c.svg)](https://shields.io/)
-[![Generic badge](https://img.shields.io/badge/TypeScript-5.9.3-blue.svg)](https://shields.io/)
+## Contract Address
 
+| Network | Contract Address |
+|---------|------------------|
+| Preprod | `<YOUR_DEPLOYED_CONTRACT_ADDRESS>` |
+| Preview | `<YOUR_DEPLOYED_CONTRACT_ADDRESS>` |
 
-> **Use this repo as a template. Do not fork it.**
->  
-> This repository is intended to be used via GitHub’s “Use this template” flow.  
-> Forking this repo is discouraged, as forks are not tracked as independent projects.
+```env
+CONTRACT_ADDRESS=<YOUR_DEPLOYED_CONTRACT_ADDRESS>
+```
 
-A Midnight smart contract example demonstrating a simple one-item bulletin board with zero-knowledge proofs on testnet. Users can post a single message at a time, and only the message author can remove it.
+> **Note**: Contract deployment has been intentionally skipped per Level 1 Challenge rules. Follow the [Manual Deployment](#manual-deployment) section below to deploy to testnet and backfill this address.
 
-## Project Structure
+---
+
+## Features
+
+- **Public Counter Increments**: Anyone on the Midnight network can perform transparent counter increments.
+- **ZK Private Step Increments**: Users can choose a custom increment amount (1-100) in zero-knowledge. The secret step size is proven correct inside ZK circuits without revealing raw user secrets.
+- **Role & Ownership Verification**: ZK proof validates whether the caller is the authorized `lastActor` allowed to reset the counter state.
+- **Full-Stack Integration**: Integrated React UI with Lace wallet connector, TypeScript API layer, and interactive CLI tool.
+
+---
+
+## What This Project Does
+
+This project implements a decentralized, zero-knowledge counter on the Midnight network. Unlike traditional public blockchains where every transaction input is completely transparent, this DApp demonstrates how users can interact with global state while protecting sensitive private state (such as witness keys and off-chain input parameters) using Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge (zk-SNARKs).
+
+---
+
+## Privacy Model
+
+### Public Data (On-Ledger)
+- `count`: Global public counter state.
+- `totalOperations`: Total number of state updates performed.
+- `lastActor`: Hashed public identity commitment of the user who performed the most recent state change.
+
+### Private Data (Local Witness)
+- `localSecretKey`: 32-byte secret key stored exclusively in local browser/client private state.
+- `secretAmount`: Private increment amount provided by user witness during ZK proof creation.
+
+### Privacy Guarantees
+- The raw `localSecretKey` is **never** transmitted over the network or written to ledger state.
+- `disclose()` is invoked strictly on deterministic public key hashes derived via ZK circuits.
+- Zero-knowledge proofs prove that increment operations strictly satisfy circuit bounds (e.g. step size within 1-100 limit) without exposing raw user secrets.
+
+---
+
+## Tech Stack
+
+- **Smart Contract Language**: Compact `v0.23`
+- **Compiler**: `@midnight-ntwrk/compact-compiler` `v0.5.1`
+- **Proof Generation**: `midnightnetwork/proof-server`
+- **Frontend**: React 19, Vite, Material UI (MUI), Emotion
+- **Backend / API**: TypeScript, RxJS, Pino, Midnight JS SDK (`v4.1.1`)
+- **CLI**: Node.js CLI launcher with readline interface
+
+---
+
+## Folder Structure
 
 ```
-bulletin-board/
-├── contract/               # Smart contract in Compact language
-│   └── src/               # Contract source and utilities
-├── api/                   # Methods, classes and types for CLI and UI
-├── bboard-cli/            # Command-line interface
-│   └── src/               # CLI implementation
-└── bboard-ui/             # Web browser interface
-    └── src/               # Web UI implementation
+.
+├── contract/              # Compact smart contract source code & generated TS artifacts
+│   ├── src/
+│   │   ├── counter.compact # Primary Compact smart contract
+│   │   ├── witnesses.ts    # Private state & ZK witness definitions
+│   │   └── index.ts        # Contract module exports
+│   └── package.json
+├── api/                   # TypeScript contract API wrapper & RxJS observables
+│   ├── src/
+│   │   ├── index.ts        # CounterAPI class & deploy/join helpers
+│   │   └── common-types.ts # Shared types & state interfaces
+│   └── package.json
+├── bboard-ui/             # React Web Application with Lace Wallet integration
+│   ├── src/
+│   │   ├── components/     # UI Card, Header, & Counter controls
+│   │   ├── config/         # Theme & CONTRACT_ADDRESS placeholder
+│   │   └── contexts/       # Browser contract manager & wallet connector
+│   └── package.json
+├── bboard-cli/            # Command Line Interface launcher
+│   ├── src/                # Interactive terminal menus & testnet configurations
+│   └── package.json
+├── package.json           # Monorepo root package configuration
+└── README.md              # Project documentation
 ```
+
+---
 
 ## Prerequisites
 
-### 1. Node.js Version Check
+Before running the project locally, ensure you have installed:
 
-You need Node.js:
+- **Node.js**: `v24.x` (or `>=24.11.1`)
+- **Docker**: Installed and running (required for local proof server container)
+- **Compact Compiler**: Installed globally
+  ```bash
+  npm install -g @midnight-ntwrk/compact-compiler
+  ```
 
-```bash
-node --version
-```
+---
 
-Expected output: `v24.11.1` or higher. The repository includes an [.nvmrc](./.nvmrc) pinned to `24.11.1`.
+## Installation
 
-If you get a lower version: [Install Node.js LTS](https://nodejs.org/).
+1. Clone the repository and install root dependencies:
+   ```bash
+   npm install
+   ```
 
-### 2. Docker Installation
+2. Install dependencies across all workspace packages:
+   ```bash
+   cd api && npm install && cd ..
+   cd contract && npm install && cd ..
+   cd bboard-cli && npm install && cd ..
+   cd bboard-ui && npm install && cd ..
+   ```
 
-The [proof server](https://docs.midnight.network/develop/tutorial/using/proof-server) runs in Docker and is required for both CLI and UI to generate zero-knowledge proofs:
+3. Ensure Midnight Proof Server is running:
+   ```bash
+   docker run -p 6300:6300 midnightnetwork/proof-server
+   ```
 
-```bash
-docker --version
-```
+---
 
-Expected output: `Docker version X.X.X`.
+## Compile
 
-If Docker is not found: [Install Docker Desktop](https://docs.docker.com/desktop/). Make sure Docker Desktop is running.
-
-### 3. Lace Wallet Extension (UI Only)
-
-For the web interface, install the official Lace wallet extension on [Chrome Store](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) or the [Edge Store](https://microsoftedge.microsoft.com/addons/detail/lace/efeiemlfnahiidnjglmehaihacglceia) (tested with version 1.36.0).
-
-After installing, set up the Midnight wallet:
-
-1. Create a **new wallet** — Midnight will appear as a network option
-2. Set **Network** to **Preprod**
-3. Set **Proof server** to **Local (http://localhost:6300)** — this must point to your local proof server started via Docker
-4. Click **Enter Wallet**
-5. Fund your wallet with tNIGHT tokens from the [Preprod Faucet](https://midnight-tmnight-preprod.nethermind.dev/)
-6. Go to **Tokens** in the wallet, click **Generate tDUST**, and confirm the transaction — tDUST tokens are required to pay transaction fees on preprod
-
-## Setup Instructions
-
-### Install Project Dependencies
+Compile the Compact smart contract using the Compact compiler:
 
 ```bash
-npm install
+npm run compact
 ```
 
-This repository uses npm workspaces. Run installation once from the repository root.
+Or run directly in the contract directory:
+```bash
+cd contract && npm run compact
+```
 
-### Compile the Smart Contract
+---
 
-The Compact compiler (`compactc 0.31.0`) generates TypeScript bindings and zero-knowledge circuits from the smart contract source code:
+## Build
+
+Build the full monorepo (smart contract TS wrappers, API library, CLI, and Web UI):
 
 ```bash
-cd contract
-npm run compact    # Compiles the Compact contract
-npm run build      # Copies compiled files to dist/
-cd ..
-```
-
-Expected output:
-
-```
-> compact
-> compact compile src/bboard.compact ./src/managed/bboard
-
-Compiling 2 circuits:
-  circuit "post" (k=14, rows=10070)
-  circuit "takeDown" (k=14, rows=10087)
-
-> build
-> rm -rf dist && tsc --project tsconfig.build.json && cp -Rf ./src/managed ./dist/managed && cp ./src/bboard.compact ./dist
-
-```
-
-### Build the CLI Interface
-
-```bash
-cd bboard-cli
 npm run build
-cd ..
 ```
 
-### Build the UI Interface (Optional)
+---
 
-Only needed if you want to use the web interface:
+## Manual Deployment
+
+> ⚠️ **Deployment is intentionally skipped in Level 1**.
+
+Execute the following deployment command to deploy the compiled `counter.compact` contract to the Midnight Preprod testnet:
 
 ```bash
-cd bboard-ui
-npm run build
-cd ..
+NODE_OPTIONS="--max-old-space-size=12288" npm run deploy -- --network preprod
 ```
 
-## Option 1: CLI Interface
-
-### Start the Proof Server
-
-The CLI requires a local proof server running in Docker:
-
+Or for Preview testnet:
 ```bash
-cd bboard-cli
-docker compose -f proof-server-local.yml up -d
+NODE_OPTIONS="--max-old-space-size=12288" npm run deploy -- --network preview
 ```
 
-This uses `midnightntwrk/proof-server:8.0.3` on `http://127.0.0.1:6300`.
+---
 
-### Run the CLI
+## After Deployment
 
-```bash
-# For preprod network
-npm run preprod-remote
+Once deployment completes:
 
-# For preview network
-npm run preview-remote
-```
+1. Copy the deployed contract address output from your terminal (e.g. `0x...` or hex string).
+2. Replace all occurrences of `<YOUR_DEPLOYED_CONTRACT_ADDRESS>` across the project:
+   - `README.md`
+   - `bboard-ui/src/config/contract.ts`
+   - `.env` files (if created)
 
-### Using the CLI
+No code modifications or architectural changes are required.
 
-#### Create a Wallet
+---
 
-1. Choose option `1` to build a fresh wallet
-2. The system will generate a wallet address and seed
-3. **Save both the address and seed** - you'll need them later
+## Environment Variables
 
-Expected output is similar to:
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VITE_NETWORK_ID` | Midnight network identifier (`preprod` or `preview`) | `preprod` |
+| `CONTRACT_ADDRESS` | Deployed Midnight Counter contract address | `<YOUR_DEPLOYED_CONTRACT_ADDRESS>` |
 
-```
-Your wallet seed is: [64-character hex string]
-Using unshielded address: mn_addr_preprod1hdvtst70zfgd8wvh7l8ppp7mcrxnjn56wc5hlxpwflz3fxdykaesrw0ln4 waiting for funds...
-```
+---
 
-#### Fund Your Wallet
+## Screenshots
 
-Before deploying contracts, you need testnet tokens.
+*(Place screenshot images of your running UI and terminal here before final submission)*
 
-1. Copy your wallet address from the output above
-2. Visit the [faucet](https://midnight-tmnight-preprod.nethermind.dev/)
-3. Paste your address and request funds
-4. Wait for the CLI to detect the funds (takes 2-3 minutes)
+- `[Screenshot 1: Web UI Dashboard]`
+- `[Screenshot 2: Lace Wallet ZK Proof Sign Prompt]`
+- `[Screenshot 3: CLI Interactive Terminal]`
 
-Expected output after funding is similar to:
+---
 
-```
-Your NIGHT wallet balance is: 1000000000
-```
+## Initial Idea
 
-#### Deploy Your Contract
+The initial idea for this project was to construct a minimalist yet feature-complete Zero-Knowledge Counter application that showcases state transitions on the Midnight network, combining public state counters with ZK-bounded private witness step increments.
 
-1. Choose the contract deployment option
-2. Wait for deployment (takes ~30 seconds)
-3. **Save the contract address** for future use
-
-Expected output:
-
-```
-Deployed bulletin board contract at address: [contract address]
-```
-
-#### Use the Bulletin Board
-
-You can now:
-
-- **Post** a message to the bulletin board
-- **View** the current message
-- **Remove** your message (only if you posted it)
-- **Exit** when done
-
-Each action creates a real transaction on Midnight Testnet using zero-knowledge proofs generated by the proof server.
-
-## Option 2: Web UI Interface
-
-The web interface uses the same proof server and requires additional browser setup.
-
-### Start the Proof Server (if not already running)
-
-If you haven't started the proof server for the CLI, start it now:
-
-```bash
-cd bboard-cli
-docker compose -f proof-server-local.yml up -d
-cd ..
-```
-
-Verify it's running:
-
-```bash
-docker ps
-```
-
-### Start the Web Interface
-
-The UI can run against preprod or preview networks:
-
-```bash
-cd bboard-ui
-
-# For preprod network
-npm run build:start
-
-# For preview network
-npm run build:start:preview
-```
-
-The UI will be available at:
-
-- http://127.0.0.1:8080
-
-### Browser Setup
-
-1. **Open the UI URL** in a browser with Lace wallet extension installed
-2. **Set up Lace wallet** if it's your first time
-3. **Authorize the application** when Lace wallet prompts
-4. Use the bulletin board web interface
-
-## Useful Links
-
-- Get Testnet tNIGHT on [Preprod Faucet](https://midnight-tmnight-preprod.nethermind.dev/) or [Preview Faucet](https://midnight-tmnight-preview.nethermind.dev/)
-- [Midnight Documentation](https://docs.midnight.network/examples/dapps/bboard) - Complete developer guide
-- [Compatibility Matrix](https://docs.midnight.network/relnotes/support-matrix) - Current supported Midnight component versions
-- [Compact Language Guide](https://docs.midnight.network/compact/writing) - Smart contract language reference
-- Get Lace wallet on the [Chrome Store](https://chromewebstore.google.com/detail/lace/gafhhkghbfjjkeiendhlofajokpaflmk) or the [Edge Store](https://microsoftedge.microsoft.com/addons/detail/lace/efeiemlfnahiidnjglmehaihacglceia)
+---
 
 ## Troubleshooting
 
-| Common Issue                       | Solution                                                                                                  |
-| ---------------------------------- |-----------------------------------------------------------------------------------------------------------|
-| `npm install` fails                | Ensure you're using Node `v24.11.1` or newer. Older Node versions can install with warnings but are not the target runtime |
-| Contract compilation fails         | Ensure the Compact toolchain is installed and run `npm run compact` from `contract/`                      |
-| Network connection timeout         | CLI requires internet connection, restart if connection times out                                         |
-| Token funding takes too long       | Wait 1-2 minutes, funding is automatic in CLI                                                             |
-| "Application not authorized" error | Start proof server: `docker compose -f proof-server-local.yml up -d`                                      |
-| Lace wallet not detected           | Install Lace wallet browser extension and refresh page                                                    |
-| Docker issues                      | Ensure Docker Desktop is running, check `docker --version`                                                |
-| Port 6300 in use                   | Run `docker compose down` then restart services                                                           |
-| Dependencies won't install         | Use Node.js LTS version. For older npm versions, you may need `--legacy-peer-deps`                        |
-| Contract deployment fails          | Verify wallet has sufficient balance and network connection                                               |
+### Proof Server Connection Error
+Ensure the Docker proof server container is active on port `6300`:
+```bash
+docker ps
+```
+If not running, execute:
+```bash
+docker run -p 6300:6300 midnightnetwork/proof-server
+```
 
-## Notes
+### Compact Compiler Command Not Found
+Reinstall `@midnight-ntwrk/compact-compiler` globally:
+```bash
+npm install -g @midnight-ntwrk/compact-compiler
+```
 
-- CLI and UI can run simultaneously and share the same proof server
-- Proof server (Docker) is required for both CLI and UI to generate zero-knowledge proofs
-- Contract must be compiled before building CLI or UI
-- Fund your wallet using the testnet faucet before deploying contracts
-
-## Implementation Notes
-
-- **Transaction fee configuration**  
-  The default `additionalFeeOverhead` value (`500_000_000_000_000_000n`) from `@midnight-ntwrk/testkit-js` is required on the `undeployed` network. Lower values can fail with `BalanceCheckOverspend` on the node side. On remote networks, that overhead requires too much dust, so the CLI overrides it to `1_000n`.
-- CLI private state is stored per contract address, matching the `Midnight.js 4.x` private-state provider model.
+### Wallet Extension Not Responding
+Ensure the Midnight Lace Chrome Extension is installed, unlocked, and connected to the correct network (`preprod` or `preview`).

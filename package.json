@@ -1,5 +1,5 @@
 {
-  "name": "@midnight-ntwrk/example-bboard",
+  "name": "@midnight-ntwrk/counter-dapp",
   "version": "0.1.0",
   "author": "IOG",
   "license": "MIT",
@@ -15,6 +15,11 @@
       "api",
       "contract"
     ]
+  },
+  "scripts": {
+    "compact": "npm --prefix contract run compact",
+    "build": "npm --prefix contract run build && npm --prefix api run build && npm --prefix bboard-cli run build && npm --prefix bboard-ui run build",
+    "deploy": "node --experimental-specifier-resolution=node --loader ts-node/esm bboard-cli/src/launcher/preprod.ts"
   },
   "dependencies": {
     "@midnight-ntwrk/dapp-connector-api": "4.0.1",
