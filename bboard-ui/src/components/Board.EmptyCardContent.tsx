@@ -1,43 +1,20 @@
-// This file is part of midnightntwrk/example-bboard.
-// Copyright (C) Midnight Foundation
+// Midnight Counter Empty Card Content UI
 // SPDX-License-Identifier: Apache-2.0
-// Licensed under the Apache License, Version 2.0 (the "License");
-// You may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 import React, { useState } from 'react';
 import { type ContractAddress } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { CardActions, CardContent, IconButton, Tooltip, Typography } from '@mui/material';
-import BoardAddIcon from '@mui/icons-material/PostAddOutlined';
+import { CardActions, CardContent, IconButton, Tooltip, Typography, Box } from '@mui/material';
+import CounterAddIcon from '@mui/icons-material/PlusOneOutlined';
 import CreateBoardIcon from '@mui/icons-material/AddCircleOutlined';
 import JoinBoardIcon from '@mui/icons-material/AddLinkOutlined';
 import { TextPromptDialog } from './TextPromptDialog';
+import { CONTRACT_ADDRESS } from '../config/contract.js';
 
-/**
- * The props required by the {@link EmptyCardContent} component.
- *
- * @internal
- */
 export interface EmptyCardContentProps {
-  /** A callback that will be called to create a new bulletin board. */
   onCreateBoardCallback: () => void;
-  /** A callback that will be called to join an existing bulletin board. */
   onJoinBoardCallback: (contractAddress: ContractAddress) => void;
 }
 
-/**
- * Used when there is no board deployment to render a UI allowing the user to join or deploy bulletin boards.
- *
- * @internal
- */
 export const EmptyCardContent: React.FC<Readonly<EmptyCardContentProps>> = ({
   onCreateBoardCallback,
   onJoinBoardCallback,
@@ -46,28 +23,41 @@ export const EmptyCardContent: React.FC<Readonly<EmptyCardContentProps>> = ({
 
   return (
     <React.Fragment>
-      <CardContent>
-        <Typography align="center" variant="h1" color="primary.dark">
-          <BoardAddIcon fontSize="large" />
+      <CardContent sx={{ textAlign: 'center', py: 4 }}>
+        <Typography align="center" variant="h1" color="primary.main" sx={{ mb: 2 }}>
+          <CounterAddIcon fontSize="large" sx={{ fontSize: '3.5rem' }} />
         </Typography>
-        <Typography data-testid="board-posted-message" align="center" variant="body2" color="primary.dark">
-          Create a new Board, or join an existing one...
+        <Typography data-testid="board-posted-message" align="center" variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 600 }}>
+          Midnight ZK Counter DApp
         </Typography>
+        <Typography align="center" variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Deploy a new Counter contract or join an existing contract on Midnight preprod/preview testnet.
+        </Typography>
+        <Box sx={{ p: 1.5, background: 'rgba(255, 255, 255, 0.05)', borderRadius: 2, border: '1px dashed rgba(255,255,255,0.2)' }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+            Target Contract Address Placeholder:
+          </Typography>
+          <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#90caf9' }}>
+            {CONTRACT_ADDRESS}
+          </Typography>
+        </Box>
       </CardContent>
-      <CardActions disableSpacing sx={{ justifyContent: 'center' }}>
-        <Tooltip title="Create a new board">
-          <IconButton data-testid="board-deploy-btn" onClick={onCreateBoardCallback}>
-            <CreateBoardIcon />
+      <CardActions disableSpacing sx={{ justifyContent: 'center', pb: 3 }}>
+        <Tooltip title="Deploy new Counter Contract">
+          <IconButton data-testid="board-deploy-btn" onClick={onCreateBoardCallback} color="primary" size="large">
+            <CreateBoardIcon sx={{ fontSize: '2rem' }} />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Join an existing board">
+        <Tooltip title="Join existing Counter Contract">
           <IconButton
             data-testid="board-join-btn"
             onClick={() => {
               setTextPromptOpen(true);
             }}
+            color="secondary"
+            size="large"
           >
-            <JoinBoardIcon />
+            <JoinBoardIcon sx={{ fontSize: '2rem' }} />
           </IconButton>
         </Tooltip>
       </CardActions>

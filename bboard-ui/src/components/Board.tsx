@@ -1,17 +1,5 @@
-// This file is part of midnightntwrk/example-bboard.
-// Copyright (C) Midnight Foundation
+// Midnight Counter Board Component
 // SPDX-License-Identifier: Apache-2.0
-// Licensed under the Apache License, Version 2.0 (the "License");
-// You may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { type ContractAddress } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
@@ -26,116 +14,102 @@ import {
   Skeleton,
   Typography,
   TextField,
+  Button,
+  Box,
+  Chip,
+  Tooltip,
+  Divider,
 } from '@mui/material';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
-import DeleteIcon from '@mui/icons-material/DeleteOutlined';
-import WriteIcon from '@mui/icons-material/EditNoteOutlined';
+import AddIcon from '@mui/icons-material/AddCircleOutlined';
+import SecurityIcon from '@mui/icons-material/SecurityOutlined';
+import RefreshIcon from '@mui/icons-material/RestartAltOutlined';
 import CopyIcon from '@mui/icons-material/ContentPasteOutlined';
-import StopIcon from '@mui/icons-material/HighlightOffOutlined';
-import { type BBoardDerivedState, type DeployedBBoardAPI } from '../../../api/src/index';
-import { useDeployedBoardContext } from '../hooks';
-import { type BoardDeployment } from '../contexts';
+import { type CounterDerivedState, type DeployedCounterAPI } from '../../../api/src/index.js';
+import { useDeployedBoardContext } from '../hooks/index.js';
+import { type BoardDeployment } from '../contexts/index.js';
 import { type Observable } from 'rxjs';
-import { State } from '../../../contract/src/index';
-import { EmptyCardContent } from './Board.EmptyCardContent';
+import { EmptyCardContent } from './Board.EmptyCardContent.js';
+import { CONTRACT_ADDRESS } from '../config/contract.js';
 
-/** The props required by the {@link Board} component. */
 export interface BoardProps {
-  /** The observable bulletin board deployment. */
   boardDeployment$?: Observable<BoardDeployment>;
 }
 
-/**
- * Provides the UI for a deployed bulletin board contract; allowing messages to be posted or removed
- * following the rules enforced by the underlying Compact contract.
- *
- * @remarks
- * With no `boardDeployment$` observable, the component will render a UI that allows the user to create
- * or join bulletin boards. It requires a `<DeployedBoardProvider />` to be in scope in order to manage
- * these additional boards. It does this by invoking the `resolve(...)` method on the currently in-
- * scope `DeployedBoardContext`.
- *
- * When a `boardDeployment$` observable is received, the component begins by rendering a skeletal view of
- * itself, along with a loading background. It does this until the board deployment receives a
- * `DeployedBBoardAPI` instance, upon which it will then subscribe to its `state$` observable in order
- * to start receiving the changes in the bulletin board state (i.e., when a user posts a new message).
- */
 export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
   const boardApiProvider = useDeployedBoardContext();
   const [boardDeployment, setBoardDeployment] = useState<BoardDeployment>();
-  const [deployedBoardAPI, setDeployedBoardAPI] = useState<DeployedBBoardAPI>();
+  const [deployedCounterAPI, setDeployedCounterAPI] = useState<DeployedCounterAPI>();
   const [errorMessage, setErrorMessage] = useState<string>();
-  const [boardState, setBoardState] = useState<BBoardDerivedState>();
-  const [messagePrompt, setMessagePrompt] = useState<string>();
+  const [counterState, setCounterState] = useState<CounterDerivedState>();
+  const [privateAmount, setPrivateAmount] = useState<string>('5');
   const [isWorking, setIsWorking] = useState(!!boardDeployment$);
 
-  // Two simple callbacks that call `resolve(...)` to either deploy or join a bulletin board
-  // contract. Since the `DeployedBoardContext` will create a new board and update the UI, we
-  // don't have to do anything further once we've called `resolve`.
   const onCreateBoard = useCallback(() => boardApiProvider.resolve(), [boardApiProvider]);
   const onJoinBoard = useCallback(
-    (contractAddress: ContractAddress) => boardApiProvider.resolve(contractAddress),
+    (contractAddress: ContractAddress) => boardApiProvider.resolve(contractAddress || CONTRACT_ADDRESS),
     [boardApiProvider],
   );
 
-  // Callback to handle the posting of a message. The message text is captured in the `messagePrompt`
-  // state, and we just need to forward it to the `post` method of the `DeployedBBoardAPI` instance
-  // that we received in the `deployedBoardAPI` state.
-  const onPostMessage = useCallback(async () => {
-    if (!messagePrompt) {
-      return;
-    }
-
+  const onIncrement = useCallback(async () => {
     try {
-      if (deployedBoardAPI) {
+      if (deployedCounterAPI) {
         setIsWorking(true);
-        await deployedBoardAPI.post(messagePrompt);
+        await deployedCounterAPI.increment();
       }
     } catch (error: unknown) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setIsWorking(false);
     }
-  }, [deployedBoardAPI, setErrorMessage, setIsWorking, messagePrompt]);
+  }, [deployedCounterAPI]);
 
-  // Callback to handle the taking down of a message. Again, we simply invoke the `takeDown` method
-  // of the `DeployedBBoardAPI` instance.
-  const onDeleteMessage = useCallback(async () => {
+  const onIncrementPrivate = useCallback(async () => {
+    const amt = BigInt(privateAmount || '1');
     try {
-      if (deployedBoardAPI) {
+      if (deployedCounterAPI) {
         setIsWorking(true);
-        await deployedBoardAPI.takeDown();
+        await deployedCounterAPI.incrementByPrivateAmount(amt);
       }
     } catch (error: unknown) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
       setIsWorking(false);
     }
-  }, [deployedBoardAPI, setErrorMessage, setIsWorking]);
+  }, [deployedCounterAPI, privateAmount]);
+
+  const onReset = useCallback(async () => {
+    try {
+      if (deployedCounterAPI) {
+        setIsWorking(true);
+        await deployedCounterAPI.reset();
+      }
+    } catch (error: unknown) {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsWorking(false);
+    }
+  }, [deployedCounterAPI]);
 
   const onCopyContractAddress = useCallback(async () => {
-    if (deployedBoardAPI) {
-      await navigator.clipboard.writeText(deployedBoardAPI.deployedContractAddress);
+    if (deployedCounterAPI) {
+      await navigator.clipboard.writeText(deployedCounterAPI.deployedContractAddress);
+    } else {
+      await navigator.clipboard.writeText(CONTRACT_ADDRESS);
     }
-  }, [deployedBoardAPI]);
+  }, [deployedCounterAPI]);
 
-  // Subscribes to the `boardDeployment$` observable so that we can receive updates on the deployment.
   useEffect(() => {
     if (!boardDeployment$) {
       return;
     }
-
     const subscription = boardDeployment$.subscribe(setBoardDeployment);
-
     return () => {
       subscription.unsubscribe();
     };
   }, [boardDeployment$]);
 
-  // Subscribes to the `state$` observable on a `DeployedBBoardAPI` if we receive one, allowing the
-  // component to receive updates to the change in contract state; otherwise we update the UI to
-  // reflect the error was received instead.
   useEffect(() => {
     if (!boardDeployment) {
       return;
@@ -148,133 +122,150 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
     if (boardDeployment.status === 'failed') {
       setErrorMessage(
-        boardDeployment.error.message.length ? boardDeployment.error.message : 'Encountered an unexpected error.',
+        boardDeployment.error.message ? boardDeployment.error.message : 'Unknown error joining/deploying contract',
       );
+      setDeployedCounterAPI(undefined);
       return;
     }
 
-    // We need the board API as well as subscribing to its `state$` observable, so that we can invoke
-    // the `post` and `takeDown` methods later.
-    setDeployedBoardAPI(boardDeployment.api);
-    const subscription = boardDeployment.api.state$.subscribe(setBoardState);
+    setDeployedCounterAPI(boardDeployment.api);
+
+    const subscription = boardDeployment.api.state$.subscribe({
+      next: (state) => {
+        setCounterState(state);
+      },
+      error: (error) => {
+        setErrorMessage(error instanceof Error ? error.message : String(error));
+      },
+    });
+
     return () => {
       subscription.unsubscribe();
     };
-  }, [boardDeployment, setIsWorking, setErrorMessage, setDeployedBoardAPI]);
+  }, [boardDeployment]);
+
+  if (!boardDeployment$) {
+    return (
+      <Card sx={{ maxWidth: 540, margin: 'auto', mt: 4, borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', background: '#121624' }}>
+        <EmptyCardContent onCreateBoardCallback={onCreateBoard} onJoinBoardCallback={onJoinBoard} />
+      </Card>
+    );
+  }
+
+  const isOwner = counterState?.isOwner ?? false;
 
   return (
-    <Card sx={{ position: 'relative', width: 275, height: 300, minWidth: 275, minHeight: 300 }} color="primary">
-      {!boardDeployment$ && (
-        <EmptyCardContent onCreateBoardCallback={onCreateBoard} onJoinBoardCallback={onJoinBoard} />
-      )}
+    <Card sx={{ maxWidth: 540, margin: 'auto', mt: 4, borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', background: '#121624', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <CardHeader
+        avatar={
+          <Tooltip title={isOwner ? 'You are the last actor' : 'Not last actor'}>
+            {isOwner ? <LockOpenIcon color="success" /> : <LockIcon color="action" />}
+          </Tooltip>
+        }
+        action={
+          <Tooltip title="Copy Contract Address">
+            <IconButton onClick={onCopyContractAddress} color="primary">
+              <CopyIcon />
+            </IconButton>
+          </Tooltip>
+        }
+        title={
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#fff' }}>
+            Midnight Counter
+          </Typography>
+        }
+        subheader={
+          <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#90caf9' }}>
+            {deployedCounterAPI?.deployedContractAddress ?? CONTRACT_ADDRESS}
+          </Typography>
+        }
+      />
 
-      {boardDeployment$ && (
-        <React.Fragment>
-          <Backdrop
-            sx={{ position: 'absolute', color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-            open={isWorking}
-          >
-            <CircularProgress data-testid="board-working-indicator" />
-          </Backdrop>
-          <Backdrop
-            sx={{ position: 'absolute', color: '#ff0000', zIndex: (theme) => theme.zIndex.drawer + 1 }}
-            open={!!errorMessage}
-          >
-            <StopIcon fontSize="large" />
-            <Typography component="div" data-testid="board-error-message">
+      <CardContent>
+        {errorMessage && (
+          <Box sx={{ mb: 2, p: 2, borderRadius: 2, backgroundColor: 'rgba(211, 47, 47, 0.2)', border: '1px solid #d32f2f' }}>
+            <Typography variant="body2" color="error">
               {errorMessage}
             </Typography>
-          </Backdrop>
-          <CardHeader
-            avatar={
-              boardState ? (
-                boardState.state === State.VACANT || (boardState.state === State.OCCUPIED && boardState.isOwner) ? (
-                  <LockOpenIcon data-testid="post-unlocked-icon" />
-                ) : (
-                  <LockIcon data-testid="post-locked-icon" />
-                )
-              ) : (
-                <Skeleton variant="circular" width={20} height={20} />
-              )
-            }
-            titleTypographyProps={{ color: 'primary' }}
-            title={toShortFormatContractAddress(deployedBoardAPI?.deployedContractAddress) ?? 'Loading...'}
-            action={
-              deployedBoardAPI?.deployedContractAddress ? (
-                <IconButton title="Copy contract address" onClick={onCopyContractAddress}>
-                  <CopyIcon fontSize="small" />
-                </IconButton>
-              ) : (
-                <Skeleton variant="circular" width={20} height={20} />
-              )
-            }
-          />
-          <CardContent>
-            {boardState ? (
-              boardState.state === State.OCCUPIED ? (
-                <Typography data-testid="board-posted-message" sx={{ minHeight: 160 }} color="primary">
-                  {boardState.message}
-                </Typography>
-              ) : (
-                <TextField
-                  id="message-prompt"
-                  data-testid="board-message-prompt"
-                  variant="outlined"
-                  focused
-                  fullWidth
-                  multiline
-                  minRows={6}
-                  maxRows={6}
-                  placeholder="Message to post"
-                  size="small"
-                  color="primary"
-                  slotProps={{ htmlInput: { style: { color: 'black' } } }}
-                  onChange={(e) => {
-                    setMessagePrompt(e.target.value);
-                  }}
-                />
-              )
-            ) : (
-              <Skeleton variant="rectangular" width={245} height={160} />
-            )}
-          </CardContent>
-          <CardActions>
-            {deployedBoardAPI ? (
-              <React.Fragment>
-                <IconButton
-                  title="Post message"
-                  data-testid="board-post-message-btn"
-                  disabled={boardState?.state === State.OCCUPIED || !messagePrompt?.length}
-                  onClick={onPostMessage}
-                >
-                  <WriteIcon />
-                </IconButton>
-                <IconButton
-                  title="Take down message"
-                  data-testid="board-take-down-message-btn"
-                  disabled={
-                    boardState?.state === State.VACANT || (boardState?.state === State.OCCUPIED && !boardState.isOwner)
-                  }
-                  onClick={onDeleteMessage}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </React.Fragment>
-            ) : (
-              <Skeleton variant="rectangular" width={80} height={20} />
-            )}
-          </CardActions>
-        </React.Fragment>
-      )}
+          </Box>
+        )}
+
+        <Box sx={{ textAlign: 'center', py: 3, my: 1, borderRadius: 3, background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.15), rgba(156, 39, 176, 0.15))', border: '1px solid rgba(255,255,255,0.15)' }}>
+          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>
+            Current Counter Value
+          </Typography>
+          <Typography variant="h2" sx={{ fontWeight: 800, color: '#4fc3f7', my: 1 }}>
+            {counterState ? counterState.count.toString() : <Skeleton width={100} sx={{ mx: 'auto' }} />}
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
+            <Chip size="small" label={`Total Operations: ${counterState ? counterState.totalOperations.toString() : '0'}`} color="secondary" variant="outlined" />
+            <Chip size="small" label={isOwner ? 'Actor: You' : 'Actor: External'} color={isOwner ? 'success' : 'default'} variant="outlined" />
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.1)' }} />
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={onIncrement}
+            disabled={isWorking}
+            sx={{ py: 1.5, borderRadius: 2, fontWeight: 700, textTransform: 'none', fontSize: '1rem' }}
+          >
+            Public Increment (+1)
+          </Button>
+
+          <Box sx={{ p: 2, borderRadius: 2, backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <Typography variant="subtitle2" sx={{ color: '#ce93d8', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <SecurityIcon fontSize="small" /> ZK Private Step Increment
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <TextField
+                size="small"
+                type="number"
+                label="Private Step Amount (1-100)"
+                value={privateAmount}
+                onChange={(e) => setPrivateAmount(e.target.value)}
+                sx={{ flexGrow: 1 }}
+                slotProps={{ htmlInput: { min: 1, max: 100 } }}
+              />
+              <Button
+                variant="contained"
+                color="secondary"
+                onClick={onIncrementPrivate}
+                disabled={isWorking}
+                sx={{ textTransform: 'none', fontWeight: 600 }}
+              >
+                Increment (ZK)
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </CardContent>
+
+      <CardActions sx={{ justifyContent: 'space-between', px: 3, pb: 3 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+          Last Actor: {counterState?.lastActor ? `${counterState.lastActor.substring(0, 10)}...` : 'N/A'}
+        </Typography>
+        <Button
+          size="small"
+          color="error"
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={onReset}
+          disabled={isWorking || !isOwner}
+          sx={{ textTransform: 'none', borderRadius: 2 }}
+        >
+          Reset Counter
+        </Button>
+      </CardActions>
+
+      <Backdrop open={isWorking} sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
     </Card>
   );
 };
-
-/** @internal */
-const toShortFormatContractAddress = (contractAddress: ContractAddress | undefined): React.ReactElement | undefined =>
-  // Returns a new string made up of the first, and last, 8 characters of a given contract address.
-  contractAddress ? (
-    <span data-testid="board-address">
-      0x{contractAddress?.replace(/^[A-Fa-f0-9]{6}([A-Fa-f0-9]{8}).*([A-Fa-f0-9]{8})$/g, '$1...$2')}
-    </span>
-  ) : undefined;
