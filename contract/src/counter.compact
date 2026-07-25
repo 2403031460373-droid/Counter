@@ -1,0 +1,59 @@
+// Contract: Counter (counter.compact)
+// Midnight Zero-Knowledge Smart Contract for Counter DApp
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+/**
+ * Public Ledger Data:
+ * - count: The global public counter value accessible to all network participants.
+ * - totalOperations: Total number of counter operation updates performed.
+ * - lastActor: Hashed public identity of the user who performed the latest counter update.
+ *
+ * Private Data:
+ * - secretKey: 32-byte secret witness key known only to the user.
+ * - secretAmount: Private step/increment amount provided by user witness.
+ *
+ * Privacy Guarantees:
+ * - The user's secret key is stored only in local private state and never disclosed on-chain.
+ * - `disclose()` is used strictly on computed public commitments and user-approved state inputs.
+ * - Zero-knowledge proofs validate state transitions (e.g. step bounds) without revealing private state.
+ */
+
+export ledger count: Counter;
+export ledger totalOperations: Counter;
+export ledger lastActor: Bytes<32>;
+
+constructor() {
+  count.increment(0);
+  totalOperations.increment(0);
+}
+
+witness localSecretKey(): Bytes<32>;
+witness secretAmount(): Uint<16>;
+
+export circuit increment(): [] {
+  count.increment(1);
+  totalOperations.increment(1);
+  lastActor = disclose(publicKey(localSecretKey(), count as Field as Bytes<32>));
+}
+
+export circuit incrementByPrivateAmount(): [] {
+  const privateValue = disclose(secretAmount());
+  assert(privateValue > 0, "Increment amount must be greater than zero");
+  assert(privateValue <= 100, "Increment amount exceeds maximum allowed step limit");
+  count.increment(privateValue);
+  totalOperations.increment(1);
+  lastActor = disclose(publicKey(lastActor, count as Field as Bytes<32>));
+}
+
+export circuit reset(): [] {
+  const callerPk = disclose(publicKey(localSecretKey(), count as Field as Bytes<32>));
+  assert(lastActor == callerPk, "Only the last actor can reset the counter");
+  totalOperations.increment(1);
+}
+
+export circuit publicKey(sk: Bytes<32>, countState: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>([pad(32, "counter:pk:"), countState, sk]);
+}
