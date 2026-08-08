@@ -11,7 +11,10 @@ import * as Witnesses from "./witnesses.js";
 
 export const CompiledCounterContractContract = CompiledContract.make<
   CompiledCounterContract.Contract<Witnesses.CounterPrivateState>
->("Counter", CompiledCounterContract.Contract<Witnesses.CounterPrivateState>).pipe(
+>(
+  "Counter",
+  CompiledCounterContract.Contract<Witnesses.CounterPrivateState>,
+).pipe(
   CompiledContract.withWitnesses(Witnesses.witnesses),
   CompiledContract.withCompiledFileAssets("./managed/counter"),
 );

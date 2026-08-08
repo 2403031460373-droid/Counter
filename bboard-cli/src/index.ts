@@ -49,7 +49,11 @@ You can do one of the following:
   3. Exit
 Which would you like to do? `;
 
-const deployOrJoin = async (providers: CounterProviders, rli: Interface, logger: Logger): Promise<CounterAPI | null> => {
+const deployOrJoin = async (
+  providers: CounterProviders,
+  rli: Interface,
+  logger: Logger,
+): Promise<CounterAPI | null> => {
   let api: CounterAPI | null = null;
 
   while (true) {
@@ -234,7 +238,9 @@ export const run = async (config: Config, testEnv: TestEnvironment, logger: Logg
       }
     }
 
-    const zkConfigProvider = new NodeZkConfigProvider<'increment' | 'incrementByPrivateAmount' | 'reset'>(config.zkConfigPath);
+    const zkConfigProvider = new NodeZkConfigProvider<'increment' | 'incrementByPrivateAmount' | 'reset'>(
+      config.zkConfigPath,
+    );
     const providers: CounterProviders = {
       privateStateProvider: levelPrivateStateProvider<PrivateStateId, CounterPrivateState>({
         privateStateStoreName: config.privateStateStoreName,

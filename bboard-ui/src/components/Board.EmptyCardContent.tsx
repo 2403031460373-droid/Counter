@@ -27,13 +27,26 @@ export const EmptyCardContent: React.FC<Readonly<EmptyCardContentProps>> = ({
         <Typography align="center" variant="h1" color="primary.main" sx={{ mb: 2 }}>
           <CounterAddIcon fontSize="large" sx={{ fontSize: '3.5rem' }} />
         </Typography>
-        <Typography data-testid="board-posted-message" align="center" variant="h6" color="text.primary" sx={{ mb: 1, fontWeight: 600 }}>
+        <Typography
+          data-testid="board-posted-message"
+          align="center"
+          variant="h6"
+          color="text.primary"
+          sx={{ mb: 1, fontWeight: 600 }}
+        >
           Midnight ZK Counter DApp
         </Typography>
         <Typography align="center" variant="body2" color="text.secondary" sx={{ mb: 3 }}>
           Deploy a new Counter contract or join an existing contract on Midnight preprod/preview testnet.
         </Typography>
-        <Box sx={{ p: 1.5, background: 'rgba(255, 255, 255, 0.05)', borderRadius: 2, border: '1px dashed rgba(255,255,255,0.2)' }}>
+        <Box
+          sx={{
+            p: 1.5,
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: 2,
+            border: '1px dashed rgba(255,255,255,0.2)',
+          }}
+        >
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
             Target Contract Address Placeholder:
           </Typography>

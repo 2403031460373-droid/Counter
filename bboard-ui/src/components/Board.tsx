@@ -146,7 +146,16 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
   if (!boardDeployment$) {
     return (
-      <Card sx={{ maxWidth: 540, margin: 'auto', mt: 4, borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.4)', background: '#121624' }}>
+      <Card
+        sx={{
+          maxWidth: 540,
+          margin: 'auto',
+          mt: 4,
+          borderRadius: 4,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          background: '#121624',
+        }}
+      >
         <EmptyCardContent onCreateBoardCallback={onCreateBoard} onJoinBoardCallback={onJoinBoard} />
       </Card>
     );
@@ -155,7 +164,17 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
   const isOwner = counterState?.isOwner ?? false;
 
   return (
-    <Card sx={{ maxWidth: 540, margin: 'auto', mt: 4, borderRadius: 4, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', background: '#121624', border: '1px solid rgba(255,255,255,0.1)' }}>
+    <Card
+      sx={{
+        maxWidth: 540,
+        margin: 'auto',
+        mt: 4,
+        borderRadius: 4,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+        background: '#121624',
+        border: '1px solid rgba(255,255,255,0.1)',
+      }}
+    >
       <CardHeader
         avatar={
           <Tooltip title={isOwner ? 'You are the last actor' : 'Not last actor'}>
@@ -183,23 +202,54 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
 
       <CardContent>
         {errorMessage && (
-          <Box sx={{ mb: 2, p: 2, borderRadius: 2, backgroundColor: 'rgba(211, 47, 47, 0.2)', border: '1px solid #d32f2f' }}>
+          <Box
+            sx={{
+              mb: 2,
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: 'rgba(211, 47, 47, 0.2)',
+              border: '1px solid #d32f2f',
+            }}
+          >
             <Typography variant="body2" color="error">
               {errorMessage}
             </Typography>
           </Box>
         )}
 
-        <Box sx={{ textAlign: 'center', py: 3, my: 1, borderRadius: 3, background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.15), rgba(156, 39, 176, 0.15))', border: '1px solid rgba(255,255,255,0.15)' }}>
-          <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}>
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 3,
+            my: 1,
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.15), rgba(156, 39, 176, 0.15))',
+            border: '1px solid rgba(255,255,255,0.15)',
+          }}
+        >
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ textTransform: 'uppercase', letterSpacing: 1.5, fontWeight: 600 }}
+          >
             Current Counter Value
           </Typography>
           <Typography variant="h2" sx={{ fontWeight: 800, color: '#4fc3f7', my: 1 }}>
             {counterState ? counterState.count.toString() : <Skeleton width={100} sx={{ mx: 'auto' }} />}
           </Typography>
           <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 1 }}>
-            <Chip size="small" label={`Total Operations: ${counterState ? counterState.totalOperations.toString() : '0'}`} color="secondary" variant="outlined" />
-            <Chip size="small" label={isOwner ? 'Actor: You' : 'Actor: External'} color={isOwner ? 'success' : 'default'} variant="outlined" />
+            <Chip
+              size="small"
+              label={`Total Operations: ${counterState ? counterState.totalOperations.toString() : '0'}`}
+              color="secondary"
+              variant="outlined"
+            />
+            <Chip
+              size="small"
+              label={isOwner ? 'Actor: You' : 'Actor: External'}
+              color={isOwner ? 'success' : 'default'}
+              variant="outlined"
+            />
           </Box>
         </Box>
 
@@ -218,8 +268,18 @@ export const Board: React.FC<Readonly<BoardProps>> = ({ boardDeployment$ }) => {
             Public Increment (+1)
           </Button>
 
-          <Box sx={{ p: 2, borderRadius: 2, backgroundColor: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <Typography variant="subtitle2" sx={{ color: '#ce93d8', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              sx={{ color: '#ce93d8', mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}
+            >
               <SecurityIcon fontSize="small" /> ZK Private Step Increment
             </Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>

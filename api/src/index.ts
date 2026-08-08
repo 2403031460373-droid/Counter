@@ -131,7 +131,11 @@ export class CounterAPI implements DeployedCounterAPI {
     return new CounterAPI(deployedCounterContract, providers, logger);
   }
 
-  static async join(providers: CounterProviders, contractAddress: ContractAddress, logger?: Logger): Promise<CounterAPI> {
+  static async join(
+    providers: CounterProviders,
+    contractAddress: ContractAddress,
+    logger?: Logger,
+  ): Promise<CounterAPI> {
     logger?.info({
       joinContract: {
         contractAddress,
