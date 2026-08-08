@@ -3,7 +3,7 @@
 
 import { type MidnightProviders } from '@midnight-ntwrk/midnight-js-types';
 import { type FoundContract } from '@midnight-ntwrk/midnight-js-contracts';
-import type { CounterPrivateState, Contract, Witnesses } from '../../contract/src/index';
+import type { CounterPrivateState, Contract } from '../../contract/src/index';
 
 export const counterPrivateStateKey = 'counterPrivateState';
 export type PrivateStateId = typeof counterPrivateStateKey;
@@ -12,7 +12,7 @@ export type PrivateStates = {
   readonly counterPrivateState: CounterPrivateState;
 };
 
-export type CounterContract = Contract<CounterPrivateState, Witnesses<CounterPrivateState>>;
+export type CounterContract = Contract<CounterPrivateState>;
 
 export type CounterCircuitKeys = Exclude<keyof CounterContract['impureCircuits'], number | symbol>;
 
